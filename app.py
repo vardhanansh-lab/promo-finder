@@ -140,6 +140,12 @@ input::placeholder,textarea::placeholder{color:var(--faint)!important;opacity:1!
 [data-testid="stSlider"] [data-baseweb="slider"]>div>div:first-child{background:var(--line)}
 [data-testid="stSlider"] [data-testid="stTickBar"] *,[data-testid="stSliderThumbValue"]{color:var(--accent)!important}
 [data-testid="stStatus"],[data-testid="stExpander"]{border:1px solid var(--line)!important;border-radius:12px!important;background:var(--surface)!important}
+[data-testid="stStatus"] summary{display:flex!important;align-items:center;gap:.6rem;min-height:2.6rem;overflow:hidden}
+[data-testid="stStatus"] summary [data-testid="stMarkdownContainer"],[data-testid="stStatus"] summary [data-testid="stMarkdownContainer"] *{color:var(--text)!important;min-width:0;white-space:normal;line-height:1.35}
+[data-testid="stStatus"] [data-testid="stMarkdownContainer"] *{color:var(--text)}
+[data-testid="stStatus"],[data-testid="stStatus"]>div{background:var(--surface)!important;color:var(--text)!important}
+[data-testid="stCode"],[data-testid="stCode"] pre,[data-testid="stCode"] code{background:var(--surface2)!important;color:var(--text)!important;white-space:pre-wrap!important;word-break:break-word}
+[data-testid="stCode"]{border:1px solid var(--bad);border-radius:10px}
 /* polish */
 [data-testid="stApp"]{background:var(--bg)!important}
 .card{box-shadow:none;transition:transform .15s,border-color .15s}
@@ -192,7 +198,8 @@ with st.sidebar:
     else:
         with st.expander("Model and run settings"):
             models = st.text_area("Model chain, tried in order (provider|model). Swap any model here.",
-                                  "gemini|gemini-2.5-flash\nopenrouter|nvidia/nemotron-3-ultra-550b-a55b:free", height=96)
+                                  ("\n".join(m.strip() for m in os.environ["LLM_MODELS"].split(",") if m.strip()) if os.environ.get("LLM_MODELS", "").strip()
+                                  else "gemini|gemini-2.5-flash\nopenrouter|nvidia/nemotron-3-ultra-550b-a55b:free"), height=96)
             st.caption("API keys are optional: leave empty to use the keys set on the server.")
             gem = st.text_input("Gemini key", type="password")
             orr = st.text_input("OpenRouter key", type="password")
@@ -240,7 +247,9 @@ if mode == "Upload screenplays":
             box.update(label="Done", state="complete", expanded=False)
             st.session_state["run_dir"] = out
         except Exception as ex:
-            box.update(label="Failed", state="error"); st.error(str(ex)); st.stop()
+            box.update(label="Failed", state="error")
+            import traceback; print(traceback.format_exc())
+            st.code(str(ex)); st.stop()
     run_dir = st.session_state.get("run_dir")
 else:
     run_dir = saved_path if os.path.exists(os.path.join(saved_path, "ranked_promos.json")) else None
