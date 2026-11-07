@@ -98,7 +98,8 @@ def _snap_end(ep: Episode, t: float):
     return None, "end not near any line"
 
 
-def _match_event(quote: str, events, lo: float, hi: float):
+def _match_event(quote: str, events, lo: float, hi: float, last: bool = False):
+    """Best line for a quote. On ties (a line repeated in the clip) take the first, or the last when last=True."""
     q = norm(quote)
     if len(q) < 4:
         return None
@@ -116,7 +117,7 @@ def _match_event(quote: str, events, lo: float, hi: float):
             # allow quoting a long line partially
             if len(q) < len(t):
                 r = max(r, difflib.SequenceMatcher(None, q, t[: len(q) + 10]).ratio())
-        if r > best_r:
+        if r > best_r or (last and r >= best_r and best is not None):
             best, best_r = e, r
     return (best, best_r) if best is not None and best_r >= 0.72 else None
 
@@ -164,7 +165,7 @@ def validate_candidates(raw, eps: list[Episode], source="llm"):
                 if hook_off > HOOK_WINDOW:
                     issues.append(f"hook lands at {hook_off:.1f}s (> {HOOK_WINDOW}s)")
                 ck = _match_event(c.get("cliffhanger_quote", ""), by[last["episode"]].events,
-                                  last["start"], last["end"])
+                                  last["start"], last["end"], last=True)
                 if not ck:
                     raise ValueError("cliffhanger quote not found in clip text")
                 tail_gap = last["end"] - ck[0].end
