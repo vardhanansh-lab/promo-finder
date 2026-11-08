@@ -79,23 +79,33 @@ class LLM:
         self._last = 0.0
         self._lock = threading.Lock()
         self._dead = {}   # model spec -> time until which it is skipped (quota hit)
+        self._idx = None
+        self._idx_lock = threading.Lock()
         os.makedirs(CACHE_DIR, exist_ok=True)
         os.makedirs(os.path.dirname(LOG_PATH) or ".", exist_ok=True)
 
     def _legacy_index(self):
-        """Index every cached reply by sha(system+user), so swapping models never throws away paid-for calls."""
-        if getattr(self, "_idx", None) is None:
-            self._idx = {}
-            for fn in os.listdir(CACHE_DIR):
-                if not fn.endswith(".json"):
-                    continue
-                try:
-                    r = json.load(open(os.path.join(CACHE_DIR, fn)))
-                    k = hashlib.sha256((r["system"] + "\x00" + r["user"]).encode()).hexdigest()[:24]
-                    self._idx[k] = r["parsed"]
-                except Exception:
-                    pass
-        return self._idx
+        """Index every cached reply by sha(system+user), so swapping models never throws away paid-for calls.
+        Built once, under a lock, and published only when complete (worker threads must never see a half-built index)."""
+        with self._idx_lock:
+            if self._idx is None:
+                idx = {}
+                for fn in os.listdir(CACHE_DIR):
+                    if not fn.endswith(".json"):
+                        continue
+                    try:
+                        raw = open(os.path.join(CACHE_DIR, fn), "rb").read()
+                        try:
+                            txt = raw.decode("utf-8")
+                        except UnicodeDecodeError:
+                            txt = raw.decode("cp1252", "replace")
+                        r = json.loads(txt)
+                        k = hashlib.sha256((r["system"] + "\x00" + r["user"]).encode()).hexdigest()[:24]
+                        idx[k] = r["parsed"]
+                    except Exception:
+                        pass
+                self._idx = idx
+            return self._idx
 
     # ---- low level
     def _resolve(self, spec):
@@ -123,7 +133,7 @@ class LLM:
         with urllib.request.urlopen(req, timeout=180) as r:
             return json.loads(r.read())
 
-    def chat(self, system: str, user: str, max_tokens=4000, expect_json=True, tag=""):
+    def chat(self, system: str, user: str, max_tokens=4000, expect_json=True, tag="", wait=True):
         if not self.models:
             raise RuntimeError("No models. Put LLM_MODELS=gemini|gemini-2.5-flash,... in .env")
         key = hashlib.sha256((system + "\x00" + user).encode()).hexdigest()[:24]
@@ -180,9 +190,11 @@ class LLM:
                     time.sleep(5)
         # every model parked or failed: wait for the earliest one to recover, once
         if self._dead and all(self._dead.get(m, 0) > time.time() for m in self.models):
+            if not wait:
+                raise RuntimeError("all models limited (not waiting)")
             soon = min(self._dead.values()) - time.time()
             print(f"  [llm] all models limited; waiting {soon:.0f}s")
             time.sleep(max(1, soon))
             self._dead.clear()
-            return self.chat(system, user, max_tokens, expect_json, tag)
+            return self.chat(system, user, max_tokens, expect_json, tag, wait)
         raise RuntimeError(f"All models failed. Last error: {last_err}")

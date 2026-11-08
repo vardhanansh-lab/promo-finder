@@ -53,3 +53,8 @@ Return ONLY JSON: {"clips":[{"id":"<id>","hook":0,"cliffhanger":0,"intensity":0,
 
 WHY_SYSTEM = """You write the posting-priority note for a social media editor. You get the top-ranked promo clips with their scores. For each, write one plain sentence (max 30 words) saying why this should be posted at that rank (what stops the scroll, what pulls the next tap, and any risk). Do not change the order. Do not use em dashes.
 Return ONLY JSON: {"notes":[{"id":"<id>","post_reason":"..."}]}"""
+
+
+CALIBRATE_NOTE = """
+
+CALIBRATION PASS. All clips below come from the same show and compete for the same few promo slots, so score them RELATIVE to each other. Spread your scores: your best 3-4 clips on a dimension get 9-10, your weakest 3-4 get 3-5. Do not give the same score to more than 6 clips on any one dimension."""

@@ -284,6 +284,60 @@ def score(c):
     c["score"] = round(max(0.0, total - pen), 1)
 
 
+def calibrate(llm, cands, eps, run_id="r1", k=30, progress=print):
+    """Second judging pass. The first pass scores clips in small batches, so scores from different batches are not
+    strictly comparable. Here the top-k clips are judged TOGETHER in one shuffled prompt, and each clip's final
+    judge scores are the mean of the two passes."""
+    import random
+    by = {e.number: e for e in eps}
+    pool = sorted([c for c in cands if c.get("score") is not None], key=lambda c: -c["score"])[:k]
+    if len(pool) < 6:
+        return
+    before = [c["id"] for c in pool[:10]]
+    for c in pool:
+        c["score_pass1"] = c["score"]
+    order = list(pool)
+    random.Random(11).shuffle(order)
+
+    def ask(grp, tag):
+        parts = []
+        for c in grp:
+            nums = sorted({s["episode"] for s in c["segments"]})
+            ctx = " | ".join(f"Ep{n}: {by[n].logline}" for n in nums)
+            parts.append(f"### CLIP {c['id']}\nContext (for you only): {ctx}\n{render_clip(by, c['segments'])}")
+        res = llm.chat(prompts.JUDGE_SYSTEM + prompts.CALIBRATE_NOTE + f"\n[run:{run_id}]", "\n\n".join(parts),
+                       max_tokens=3500, tag=tag, wait=False)
+        return {r["id"]: r for r in res.get("clips", [])}
+
+    try:
+        rows = ask(order, "calibrate")
+    except Exception as ex:
+        if "limited" in str(ex):
+            progress("   calibration skipped: models are rate limited. Rerun later to add it; first-pass scores are kept.")
+            return
+        progress(f"  calibration as one prompt failed ({ex}); trying two halves")
+        rows = {}
+        for i, half in enumerate((order[: len(order) // 2], order[len(order) // 2:])):
+            try:
+                rows.update(ask(half, f"calibrate_{i}"))
+            except Exception as ex2:
+                progress(f"  calibration half {i} failed: {ex2}")
+    n = 0
+    for c in pool:
+        r2 = rows.get(c["id"])
+        if not r2 or not c.get("judge"):
+            continue
+        j1 = dict(c["judge"])
+        merged = dict(j1)
+        for f in ("hook", "cliffhanger", "intensity", "premise"):
+            merged[f] = round((_num(j1.get(f)) + _num(r2.get(f))) / 2, 2)
+        c["judge_pass1"], c["judge_pass2"], c["judge"] = j1, r2, merged
+        score(c)
+        n += 1
+    after = [c["id"] for c in sorted(pool, key=lambda c: -c["score"])[:10]]
+    progress(f"   calibration: {n}/{len(pool)} clips re-judged together; top-10 unchanged for {len(set(before) & set(after))}/10")
+
+
 def rank(cands, per_episode=2, top=None):
     scored = sorted([c for c in cands if c.get("score") is not None], key=lambda c: -c["score"])
     chosen, per_ep = [], {}
@@ -294,6 +348,10 @@ def rank(cands, per_episode=2, top=None):
             continue
         if any(overlap(c, k) > 0.3 for k in chosen):
             c["rank_note"] = "skipped: overlaps a higher-ranked clip"
+            continue
+        if any(norm(c["hook"]["quote"]) == norm(k["cliffhanger"]["quote"]) or
+               norm(k["hook"]["quote"]) == norm(c["cliffhanger"]["quote"]) for k in chosen):
+            c["rank_note"] = "skipped: adjacent to a higher-ranked clip (same moment)"
             continue
         chosen.append(c)
         per_ep[key] = per_ep.get(key, 0) + 1
@@ -344,13 +402,13 @@ def write_outputs(out_dir, eps, raw, cands, rejected, ranked):
         c["transcript"] = build_transcript(by, c["segments"])
     json.dump([{"number": e.number, "duration": e.duration, "logline": e.logline,
                 "dialogue_lines": sum(1 for x in e.events if x.kind == "DIALOGUE")} for e in eps],
-              open(os.path.join(out_dir, "show_meta.json"), "w"), indent=2, ensure_ascii=False)
-    dump = lambda name, obj: json.dump(obj, open(os.path.join(out_dir, name), "w"), indent=2, ensure_ascii=False)
+              open(os.path.join(out_dir, "show_meta.json"), "w", encoding="utf-8"), indent=2, ensure_ascii=False)
+    dump = lambda name, obj: json.dump(obj, open(os.path.join(out_dir, name), "w", encoding="utf-8"), indent=2, ensure_ascii=False)
     dump("raw_llm_candidates.json", raw)
     dump("rejected_by_validators.json", rejected)
     dump("all_scored_candidates.json", cands)
     dump("ranked_promos.json", ranked)
-    with open(os.path.join(out_dir, "ranked_promos.csv"), "w", newline="") as f:
+    with open(os.path.join(out_dir, "ranked_promos.csv"), "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f)
         w.writerow(["rank", "score", "segments", "duration_s", "hook_time", "hook", "cliffhanger", "why_it_works",
                     "post_reason", "standalone_1to5", "flags"])
@@ -368,7 +426,7 @@ def write_outputs(out_dir, eps, raw, cands, rejected, ranked):
                   f"- **Post-order reason**: {c.get('post_reason', '')}" if c.get("post_reason") else "",
                   f"- Cold-viewer read: standalone {b.get('standalone')}/5. {b.get('what_is_happening', '')}",
                   f"- Flags: {'; '.join(c['issues']) or 'none'}\n"]
-    open(os.path.join(out_dir, "ranked_promos.md"), "w").write("\n".join(lines))
+    open(os.path.join(out_dir, "ranked_promos.md"), "w", encoding="utf-8").write("\n".join(lines))
 
 
 def run(folder, llm, out_dir="outputs/run1", run_id="r1", top=25, only=None, progress=print):
@@ -386,6 +444,11 @@ def run(folder, llm, out_dir="outputs/run1", run_id="r1", top=25, only=None, pro
     judge(llm, cands, eps, run_id, progress=progress)
     for c in cands:
         score(c)
+    if os.environ.get("PROMO_CALIBRATE", "1") != "0":
+        progress("   calibration pass: judging the top 30 together")
+        calibrate(llm, cands, eps, run_id, progress=progress)
+    else:
+        progress("   calibration pass switched off (PROMO_CALIBRATE=0)")
     ranked = rank(cands, top=top)
     progress("5/5 post-order notes")
     post_reasons(llm, ranked, eps, run_id)
