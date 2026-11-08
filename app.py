@@ -331,6 +331,8 @@ with st.sidebar:
     if mode == "Open saved results":
         saved_path = st.selectbox("Saved run", SAVED)
     else:
+        up = st.file_uploader("Drop the screenplay .txt files, or one .zip", type=["txt", "zip"], accept_multiple_files=True,
+                              label_visibility="collapsed")
         st.markdown(sec("sliders", "Model settings"), unsafe_allow_html=True)
         with st.expander("Model and run settings", expanded=False):
             models = st.text_area("Model chain, tried in order (provider|model). Swap any model here.",
@@ -356,9 +358,7 @@ st.markdown("""<div class="hero"><div class="eyebrow">Microdrama promo finder</d
 
 # ------------------------------------------------------------------ run
 if mode == "Upload screenplays":
-    up = st.file_uploader("Drop the screenplay .txt files, or one .zip", type=["txt", "zip"], accept_multiple_files=True,
-                          label_visibility="collapsed")
-    go = st.button("Finding promos" if running else "Find promos", type="primary", key="findbtn", disabled=running or not up)
+    go =st.button("Finding promos" if running else "Find promos", type="primary", key="findbtn", disabled=running or not up)
     if running:
         st.markdown('<style>.st-key-findbtn button::before{content:"";display:inline-block;width:13px;height:13px;margin-right:9px;'
                     'border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:pfspin .8s linear infinite;vertical-align:-2px}'
@@ -429,7 +429,7 @@ else:
         st.warning("No ranked_promos.json in that folder.")
 
 if not run_dir:
-    st.markdown('<div class="empty"><b>Nothing here yet</b>Drop the screenplay files in the box above, then press Find promos.</div>',
+    st.markdown('<div class="empty"><b>Nothing here yet</b>Drop the screenplay files in the sidebar, then press Find promos.</div>',
                 unsafe_allow_html=True)
     st.stop()
 
