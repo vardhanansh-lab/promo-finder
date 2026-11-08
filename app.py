@@ -14,7 +14,7 @@ html,body,[data-testid="stApp"]{background:var(--bg);color:var(--text);font-fami
 [data-testid="stDecoration"],[data-testid="stMainMenu"],[data-testid="stStatusWidget"],.stAppDeployButton,.stDeployButton,#MainMenu,footer{display:none!important}
 [data-testid="stExpandSidebarButton"],[data-testid="stSidebarCollapseButton"] button{opacity:1!important;visibility:visible!important}
 header[data-testid="stHeader"]{background:transparent}
-.block-container{padding-top:.9rem;max-width:1180px}
+.block-container{padding-top:2.9rem;max-width:1180px}
 [data-testid="stSidebar"],[data-testid="stSidebar"]>div{background:var(--surface)!important;border-right:1px solid var(--line)}
 h1,h2,h3{font-family:'Poppins',sans-serif!important;font-weight:600!important;letter-spacing:-.01em}
 .eyebrow{font:700 11px 'Poppins',sans-serif;letter-spacing:.22em;text-transform:uppercase;color:var(--accent)}
@@ -65,10 +65,10 @@ div[data-testid="stExpander"]{border:1px solid var(--line);border-radius:10px;ba
 
 THEMES = {
     True: dict(bg="#050a0b", surface="#0a1618", surface2="#0e1f22", line="#15343a", text="#e4f1f1", muted="#7ea8ae", faint="#4d7479",
-               accent="#1c9aa6", gold="#d9a441", ok="#86b07f", bad="#b9534a", warn="#e0a458", warnline="#5b4526", goldline="#5b4a22",
+               accent="#1c9aa6", edge="#2a6670", gold="#d9a441", ok="#86b07f", bad="#b9534a", warn="#e0a458", warnline="#5b4526", goldline="#5b4a22",
                okline="#1f4a3c", badline="#4d2a2c", topline="#1f4f56", track="#0f2428"),
     False: dict(bg="#f3f9f9", surface="#ffffff", surface2="#e8f3f4", line="#cfe3e6", text="#0f2427", muted="#4d6f75", faint="#86a5aa",
-                accent="#0e7f8c", gold="#b07a14", ok="#3f7a4a", bad="#b03a30", warn="#a8661a", warnline="#e6cfa6", goldline="#e3cd9a",
+                accent="#0e7f8c", edge="#6fa3ab", gold="#b07a14", ok="#3f7a4a", bad="#b03a30", warn="#a8661a", warnline="#e6cfa6", goldline="#e3cd9a",
                 okline="#b5d3b8", badline="#e8b9b3", topline="#a3d6dc", track="#dcebed"),
 }
 st.session_state.setdefault("dark", st.query_params.get("theme", "dark") != "light")
@@ -167,6 +167,126 @@ LOGO = """<svg width="{s}" height="{s}" viewBox="0 0 48 48" xmlns="http://www.w3
 BRAND = '<div class="brand">' + LOGO.format(s=40) + '<div><b>Promo Finder</b><span>Microdrama clips</span></div></div>'
 
 
+# ------------------------------------------------------------------ sidebar styling (inline SVG line icons, no assets)
+ICONS = {
+    "upload": '<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>',
+    "folder": '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+    "sliders": '<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
+    "filter": '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
+    "gear": '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+    "chevron": '<polyline points="6 9 12 15 18 9"/>',
+    "search": '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+    "check_sq": '<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+    "eye": '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+    "star": '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+    "note": '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+    "check": '<polyline points="20 6 9 17 4 12"/>',
+    "x": '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+}
+
+
+def svg(name, size=14, sw=2):
+    return (f'<svg width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{sw}" '
+            f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{ICONS[name]}</svg>')
+
+
+def mask(name):
+    """CSS url() of an icon, used as a mask so pseudo-elements can take the theme colour."""
+    from urllib.parse import quote
+    s = ("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' "
+         f"stroke-linecap='round' stroke-linejoin='round'>{ICONS[name]}</svg>").replace('"', "'")
+    return f'url("data:image/svg+xml,{quote(s)}")'
+
+
+def sec(icon, text):
+    return f'<div class="sec">{svg(icon, 14)}<span>{text}</span></div>'
+
+
+SB_CSS = """<style>
+@keyframes pfspin{to{transform:rotate(360deg)}}
+[data-testid="stSidebar"]{overflow-x:hidden}
+[data-testid="stElementContainer"]:has(style){display:none}
+.sec{display:flex;align-items:center;gap:8px;margin:18px 0 10px;font:700 11px 'Poppins',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+.sec svg{flex:none}
+/* source cards: a real st.radio, restyled */
+[data-testid="stSidebar"] [data-testid="stRadioGroup"]{gap:8px}
+[data-testid="stSidebar"] [data-testid="stRadioOption"]{display:flex;width:100%;margin:0;padding:10px 13px;border:1.5px solid var(--edge);border-radius:12px;background:var(--surface);cursor:pointer;transition:border-color .15s,background .15s}
+[data-testid="stSidebar"] [data-testid="stRadioOption"]:hover{border-color:var(--accent)}
+[data-testid="stSidebar"] [data-testid="stRadioOption"][data-selected="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,var(--surface))}
+[data-testid="stSidebar"] [data-testid="stRadioOption"]>div>div>div:first-child{display:none!important}
+[data-testid="stSidebar"] [data-testid="stRadioOption"]>div>div{display:flex;align-items:center;gap:11px;width:100%}
+[data-testid="stSidebar"] [data-testid="stRadioOption"]>div>div::before{content:"";flex:none;width:18px;height:18px;background:var(--muted);-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
+[data-testid="stSidebar"] [data-testid="stRadioOption"][data-selected="true"]>div>div::before{background:var(--accent)}
+[data-testid="stSidebar"] [data-testid="stRadioOption"]:nth-child(1){--ico:__UPLOAD__}
+[data-testid="stSidebar"] [data-testid="stRadioOption"]:nth-child(2){--ico:__FOLDER__}
+[data-testid="stSidebar"] [data-testid="stRadioOption"] p{font-weight:500;font-size:.88rem;white-space:nowrap}
+[data-testid="stSidebar"] [data-testid="stRadioOption"][data-selected="true"] p{font-weight:600}
+/* model settings expander */
+[data-testid="stSidebar"] [data-testid="stExpander"]{margin-top:12px;border:1.5px solid var(--edge)!important;transition:border-color .15s}
+[data-testid="stSidebar"] [data-testid="stExpander"]:hover{border-color:var(--accent)!important}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary{padding:.7rem .8rem;position:relative;cursor:pointer}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover{background:var(--surface2)!important}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary [data-testid="stIconMaterial"]{display:none}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary>span{display:flex;align-items:center;gap:8px;width:100%;padding-right:22px;min-width:0}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary p{font-size:.8rem;font-weight:500;line-height:1.25;white-space:normal;overflow:visible}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary>span::before{content:"";flex:none;width:17px;height:17px;background:var(--accent);-webkit-mask:__GEAR__ center/contain no-repeat;mask:__GEAR__ center/contain no-repeat}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary::after{content:"";position:absolute;right:.8rem;top:50%;width:16px;height:16px;margin-top:-8px;background:var(--muted);-webkit-mask:__CHEV__ center/contain no-repeat;mask:__CHEV__ center/contain no-repeat;transition:transform .2s}
+[data-testid="stSidebar"] [data-testid="stExpander"] details[open]>summary::after{transform:rotate(180deg);background:var(--accent)}
+[data-testid="stSidebar"] [data-testid="stExpander"] details[open]>summary{border-bottom:1px solid var(--edge);border-radius:10px 10px 0 0}
+/* filters */
+[data-testid="stSidebar"] [data-testid="stSlider"]{padding-bottom:0;margin-bottom:0}
+[data-testid="stSidebar"] [data-testid="stSliderThumbValue"],[data-testid="stSidebar"] [data-testid="stSliderThumbValue"] *{color:var(--accent)!important;font-weight:700;font-size:.8rem}
+[data-testid="stSidebar"] [data-testid="stSlider"] input[type="range"]{accent-color:var(--accent)}
+[data-testid="stSidebar"] [data-testid="stCheckbox"] label p{font-size:.84rem;font-weight:500;line-height:1.3}
+[data-testid="stFileChip"]{background:var(--surface2)!important;border:1px solid var(--line);border-radius:10px}
+[data-testid="stFileChipName"],[data-testid="stFileChipName"]+div{color:var(--text)!important}
+[data-testid="stFileChipDeleteBtn"] svg{color:var(--muted)}
+[data-testid="stSidebar"] [data-testid="stCheckbox"]+[data-testid="stCaptionContainer"]{margin:-2px 0 0 0}
+/* live run card */
+.rs{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:13px 14px 14px;margin:2px 0 8px}
+.rs.done{border-color:var(--ok)}.rs.error{border-color:var(--bad)}
+.rs-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font:600 .86rem 'Poppins',sans-serif;color:var(--text)}
+.rs-h small{font:500 .72rem 'Poppins',sans-serif;color:var(--muted)}
+.rs.done .rs-h{color:var(--ok)}.rs.error .rs-h{color:var(--bad)}
+.pbar{height:4px;border-radius:9px;background:var(--line);margin:10px 0 8px;overflow:hidden}
+.pbar i{display:block;height:100%;border-radius:9px;background:var(--accent);transition:width .35s}
+.rs.done .pbar i{background:var(--ok)}.rs.error .pbar i{background:var(--bad)}
+.stp{display:flex;align-items:center;gap:10px;padding:4px 0;font-size:.82rem;color:var(--muted)}
+.stp .m{flex:none;width:18px;height:18px;display:grid;place-items:center}
+.stp.cur{color:var(--text);font-weight:600}.stp.cur .m{color:var(--accent)}
+.stp.done{color:var(--text)}.stp.done .m{color:var(--ok)}
+.stp.err{color:var(--bad);font-weight:600}.stp.err .m{color:var(--bad)}
+.stp.pend{opacity:.7}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:pfspin .8s linear infinite}
+</style>"""
+st.markdown(SB_CSS.replace("__UPLOAD__", mask("upload")).replace("__FOLDER__", mask("folder")).replace("__GEAR__", mask("gear"))
+            .replace("__CHEV__", mask("chevron")), unsafe_allow_html=True)
+
+STEPS = [("Extract candidates", "search"), ("Validate and snap", "check_sq"), ("Blind-viewer test", "eye"),
+         ("Judge", "star"), ("Posting notes", "note")]
+
+
+def status_html(rs):
+    kind, step = rs["status"], rs.get("step", 0)
+    rows = ""
+    for i, (name, ic) in enumerate(STEPS, 1):
+        if kind == "done" or i < step:
+            cls, mark = "done", svg("check", 14, 2.6)
+        elif i == step and kind == "running":
+            cls, mark = "cur", '<i class="spin"></i>'
+        elif i == step and kind == "error":
+            cls, mark = "err", svg("x", 14, 2.6)
+        else:
+            cls, mark = "pend", svg(ic, 14)
+        rows += f'<div class="stp {cls}"><span class="m">{mark}</span>{i}. {name}</div>'
+    pct = 100 if kind == "done" else max(3, 100 * (step - (0.5 if kind == "running" else 1)) / 5) if step else 3
+    head = {"running": ("Reading the show", f"step {max(step, 1)} of 5"),
+            "done": ("Done", f'{rs.get("clips", 0)} clips ranked'),
+            "error": ("Run failed", f"at step {max(step, 1)} of 5")}[kind]
+    return (f'<div class="rs {kind}"><div class="rs-h"><span>{head[0]}</span><small>{head[1]}</small></div>'
+            f'<div class="pbar"><i style="width:{pct:.0f}%"></i></div>{rows}</div>')
+
+
 E = lambda x: html.escape(str(x if x is not None else ""))
 
 
@@ -190,13 +310,29 @@ def norm(s):
 # ------------------------------------------------------------------ sidebar
 SAVED = [p for p in ("outputs/app_run", "outputs/run1", "outputs/smoke") if os.path.exists(p + "/ranked_promos.json")]
 with st.sidebar:
-    st.markdown('<div class="eyebrow">Source</div>', unsafe_allow_html=True)
+    run_slot = st.empty()  # live run card, painted from the pipeline's progress callback
+
+
+def paint(rs):
+    with run_slot.container():
+        if rs:
+            st.markdown(status_html(rs), unsafe_allow_html=True)
+            if rs["status"] == "error":
+                st.code(rs.get("err", ""), language=None)
+
+
+paint(st.session_state.get("runstate"))
+running = st.session_state.get("running", False)
+
+with st.sidebar:
+    st.markdown(sec("upload", "Source"), unsafe_allow_html=True)
     opts = ["Upload screenplays"] + (["Open saved results"] if SAVED else [])
     mode = st.radio("Source", opts, index=0, label_visibility="collapsed")
     if mode == "Open saved results":
         saved_path = st.selectbox("Saved run", SAVED)
     else:
-        with st.expander("Model and run settings"):
+        st.markdown(sec("sliders", "Model settings"), unsafe_allow_html=True)
+        with st.expander("Model and run settings", expanded=False):
             models = st.text_area("Model chain, tried in order (provider|model). Swap any model here.",
                                   ("\n".join(m.strip() for m in os.environ["LLM_MODELS"].split(",") if m.strip()) if os.environ.get("LLM_MODELS", "").strip()
                                   else "gemini|gemini-2.5-flash\nopenrouter|nvidia/nemotron-3-ultra-550b-a55b:free"), height=96)
@@ -206,8 +342,7 @@ with st.sidebar:
             run_id = st.text_input("Run id (change to force a fresh run)", "r1")
             top = st.number_input("Promos to return", 5, 50, 20)
             only = st.text_input("Only these episodes", "", placeholder="e.g. 1,2,3")
-    st.markdown("---")
-    st.markdown('<div class="eyebrow">Filter results</div>', unsafe_allow_html=True)
+    st.markdown(sec("filter", "Filter results"), unsafe_allow_html=True)
     min_score = st.slider("Minimum score", 0, 100, 0)
     only_clean = st.toggle("Hide clips with warnings", False)
     only_cross = st.toggle("Only multi-segment promos", False)
@@ -223,35 +358,67 @@ st.markdown("""<div class="hero"><div class="eyebrow">Microdrama promo finder</d
 if mode == "Upload screenplays":
     up = st.file_uploader("Drop the screenplay .txt files, or one .zip", type=["txt", "zip"], accept_multiple_files=True,
                           label_visibility="collapsed")
-    go = st.button("Find promos", type="primary", disabled=not up)
-    if go:
+    go = st.button("Finding promos" if running else "Find promos", type="primary", key="findbtn", disabled=running or not up)
+    if running:
+        st.markdown('<style>.st-key-findbtn button::before{content:"";display:inline-block;width:13px;height:13px;margin-right:9px;'
+                    'border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:pfspin .8s linear infinite;vertical-align:-2px}'
+                    '.st-key-findbtn button:disabled{background:var(--accent)!important;color:#fff!important;opacity:.85;cursor:progress}</style>',
+                    unsafe_allow_html=True)
+    if go:  # rerun once so the button renders disabled while the run executes
+        st.session_state["running"] = True
+        st.session_state["runstate"] = {"status": "running", "step": 0}
+        st.rerun()
+    if running:
+        rs = st.session_state["runstate"]
         if gem: os.environ["GEMINI_API_KEY"] = gem
         if orr: os.environ["OPENROUTER_API_KEY"] = orr
-        import tempfile
-        src = os.path.join(tempfile.mkdtemp(), "show"); os.makedirs(src)
-        for f in up:
-            if f.name.lower().endswith(".zip"):
-                with zipfile.ZipFile(io.BytesIO(f.read())) as z:
-                    for n in z.namelist():
-                        if n.lower().endswith(".txt"):
-                            open(os.path.join(src, os.path.basename(n)), "wb").write(z.read(n))
-            else:
-                open(os.path.join(src, f.name), "wb").write(f.read())
+        import re, tempfile
         from promofinder.llm import LLM
         from promofinder import pipeline as P
         box = st.status("Reading the show...", expanded=True)
+
+        def on_progress(msg):
+            """Feeds the main status box and the sidebar run card from the pipeline's '1/5 ...' lines."""
+            box.write(msg)
+            m = re.match(r"\s*(\d)/5", msg)
+            if m:
+                rs["step"] = int(m.group(1)); paint(rs)
+            m = re.match(r"\s*done: (\d+) ranked", msg)
+            if m:
+                rs["clips"] = int(m.group(1))
+
+        paint(rs)
         try:
+            src = os.path.join(tempfile.mkdtemp(), "show"); os.makedirs(src)
+            for f in up:
+                if f.name.lower().endswith(".zip"):
+                    with zipfile.ZipFile(io.BytesIO(f.read())) as z:
+                        for n in z.namelist():
+                            if n.lower().endswith(".txt"):
+                                open(os.path.join(src, os.path.basename(n)), "wb").write(z.read(n))
+                else:
+                    open(os.path.join(src, f.name), "wb").write(f.read())
             out = "outputs/app_run"
             P.run(src, LLM(models=[m.strip() for m in models.splitlines() if m.strip()]), out, run_id, int(top),
-                  {int(x) for x in only.split(",") if x.strip()} or None, progress=box.write)
+                  {int(x) for x in only.split(",") if x.strip()} or None, progress=on_progress)
             box.update(label="Done", state="complete", expanded=False)
             st.session_state["run_dir"] = out
+            rs.update(status="done", step=5)
         except Exception as ex:
             box.update(label="Failed", state="error")
             import traceback; print(traceback.format_exc())
-            st.code(str(ex)); st.stop()
+            rs.update(status="error", err=str(ex))
+        finally:
+            st.session_state["running"] = False
+            st.session_state["runstate"] = rs
+        st.rerun()  # re-enables the button and shows the result or the error
+    rs0 = st.session_state.get("runstate")
+    if rs0 and rs0["status"] == "error":
+        st.markdown('<span class="chip bad">Run failed</span>', unsafe_allow_html=True)
+        st.code(rs0.get("err", ""), language=None); st.stop()
     run_dir = st.session_state.get("run_dir")
 else:
+    st.session_state["running"] = False
     run_dir = saved_path if os.path.exists(os.path.join(saved_path, "ranked_promos.json")) else None
     if not run_dir:
         st.warning("No ranked_promos.json in that folder.")
