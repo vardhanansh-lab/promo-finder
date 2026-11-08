@@ -213,12 +213,12 @@ SB_CSS = """<style>
 [data-testid="stSidebar"] [data-testid="stRadioOption"]{display:flex;width:100%;margin:0;padding:10px 13px;border:1.5px solid var(--edge);border-radius:12px;background:var(--surface);cursor:pointer;transition:border-color .15s,background .15s}
 [data-testid="stSidebar"] [data-testid="stRadioOption"]:hover{border-color:var(--accent)}
 [data-testid="stSidebar"] [data-testid="stRadioOption"][data-selected="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,var(--surface))}
-[data-testid="stSidebar"] [data-testid="stRadioOption"]>div>div>div:first-child{display:none!important}
-[data-testid="stSidebar"] [data-testid="stRadioOption"]>div>div{display:flex;align-items:center;gap:11px;width:100%}
-[data-testid="stSidebar"] [data-testid="stRadioOption"]>div>div::before{content:"";flex:none;width:18px;height:18px;background:var(--muted);-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
-[data-testid="stSidebar"] [data-testid="stRadioOption"][data-selected="true"]>div>div::before{background:var(--accent)}
-[data-testid="stSidebar"] [data-testid="stRadioOption"]:nth-child(1){--ico:__UPLOAD__}
-[data-testid="stSidebar"] [data-testid="stRadioOption"]:nth-child(2){--ico:__FOLDER__}
+[data-testid="stSidebar"] [data-testid="stRadioOption"] :has(>[data-testid="stMarkdownContainer"]){display:flex;align-items:center;gap:11px;width:100%}
+[data-testid="stSidebar"] [data-testid="stRadioOption"] :has(>[data-testid="stMarkdownContainer"])>div:not([data-testid="stMarkdownContainer"]){display:none!important}
+[data-testid="stSidebar"] [data-testid="stRadioOption"] :has(>[data-testid="stMarkdownContainer"])::before{content:"";flex:none;width:18px;height:18px;background:var(--muted);-webkit-mask:var(--ico) center/contain no-repeat;mask:var(--ico) center/contain no-repeat}
+[data-testid="stSidebar"] [data-testid="stRadioOption"][data-selected="true"] :has(>[data-testid="stMarkdownContainer"])::before{background:var(--accent)}
+[data-testid="stSidebar"] [data-testid="stRadioOption"]:has(input[value="0"]){--ico:__UPLOAD__}
+[data-testid="stSidebar"] [data-testid="stRadioOption"]:has(input[value="1"]){--ico:__FOLDER__}
 [data-testid="stSidebar"] [data-testid="stRadioOption"] p{font-weight:500;font-size:.88rem;white-space:nowrap}
 [data-testid="stSidebar"] [data-testid="stRadioOption"][data-selected="true"] p{font-weight:600}
 /* model settings expander */
