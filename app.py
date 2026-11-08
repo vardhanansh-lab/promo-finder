@@ -1,6 +1,6 @@
 """Promo Finder: upload microdrama screenplays, get ranked promo clips, review them.
 Run locally:  python -m streamlit run app.py"""
-import csv, html, io, json, os, zipfile
+import csv, html, io, json, os, traceback, zipfile
 from collections import Counter
 
 import streamlit as st
@@ -406,8 +406,10 @@ if mode == "Upload screenplays":
             rs.update(status="done", step=5)
         except Exception as ex:
             box.update(label="Failed", state="error")
-            import traceback; print(traceback.format_exc())
-            rs.update(status="error", err=str(ex))
+            st.error(f"{type(ex).__name__}: {ex!r}")
+            st.code(traceback.format_exc())
+            traceback.print_exc()
+            st.stop()
         finally:
             st.session_state["running"] = False
             st.session_state["runstate"] = rs
