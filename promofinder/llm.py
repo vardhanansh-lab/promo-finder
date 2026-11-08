@@ -82,6 +82,21 @@ class LLM:
         os.makedirs(CACHE_DIR, exist_ok=True)
         os.makedirs(os.path.dirname(LOG_PATH) or ".", exist_ok=True)
 
+    def _legacy_index(self):
+        """Index every cached reply by sha(system+user), so swapping models never throws away paid-for calls."""
+        if getattr(self, "_idx", None) is None:
+            self._idx = {}
+            for fn in os.listdir(CACHE_DIR):
+                if not fn.endswith(".json"):
+                    continue
+                try:
+                    r = json.load(open(os.path.join(CACHE_DIR, fn)))
+                    k = hashlib.sha256((r["system"] + "\x00" + r["user"]).encode()).hexdigest()[:24]
+                    self._idx[k] = r["parsed"]
+                except Exception:
+                    pass
+        return self._idx
+
     # ---- low level
     def _resolve(self, spec):
         """'gemini|gemini-2.5-flash' -> (model, base_url, api_key)."""
@@ -111,10 +126,14 @@ class LLM:
     def chat(self, system: str, user: str, max_tokens=4000, expect_json=True, tag=""):
         if not self.models:
             raise RuntimeError("No models. Put LLM_MODELS=gemini|gemini-2.5-flash,... in .env")
-        key = hashlib.sha256((system + "\x00" + user + "\x00" + ",".join(self.models)).encode()).hexdigest()[:24]
+        key = hashlib.sha256((system + "\x00" + user).encode()).hexdigest()[:24]
         cpath = os.path.join(CACHE_DIR, key + ".json")
-        if self.use_cache and os.path.exists(cpath):
-            return json.load(open(cpath))["parsed"]
+        if self.use_cache:
+            if os.path.exists(cpath):
+                return json.load(open(cpath))["parsed"]
+            hit = self._legacy_index().get(key)   # replies cached before the key ignored the model list
+            if hit is not None:
+                return hit
         messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
         last_err = None
         for model in self.models:
