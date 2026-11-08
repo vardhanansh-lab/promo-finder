@@ -13,7 +13,7 @@ The screenplays and the raw outputs are Kuku's content, so they are not in this 
 - 25 of 142 candidates (18%) quoted a line that does not exist in the script. All were rejected by the validators.
 - Every ranked clip is 25-46s and has no timing warning.
 - Cold-viewer test: mean 3.13 / 5 standalone clarity; 23% of clips scored 2 or below.
-- Human spot check (5 clips, blind, shuffled): 3 keep, 1 edit, 1 reject. Too small for statistics.
+- Human spot check (5 clips, blind, shuffled): 3 keep, 1 edit, 1 reject.
 - About 70 model calls for a clean pass; our call log shows 107 calls (about 308k input and 402k output tokens)
   including tests, retries and reruns. Cost was 0 on free tiers.
 
