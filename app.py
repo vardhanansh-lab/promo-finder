@@ -379,13 +379,16 @@ if mode == "Upload screenplays":
 
         def on_progress(msg):
             """Feeds the main status box and the sidebar run card from the pipeline's '1/5 ...' lines."""
-            box.write(msg)
-            m = re.match(r"\s*(\d)/5", msg)
-            if m:
-                rs["step"] = int(m.group(1)); paint(rs)
-            m = re.match(r"\s*done: (\d+) ranked", msg)
-            if m:
-                rs["clips"] = int(m.group(1))
+            try:
+                box.write(msg)
+                m = re.match(r"\s*(\d)/5", msg)
+                if m:
+                    rs["step"] = int(m.group(1)); paint(rs)
+                m = re.match(r"\s*done: (\d+) ranked", msg)
+                if m:
+                    rs["clips"] = int(m.group(1))
+            except Exception:
+                pass
 
         paint(rs)
         try:
