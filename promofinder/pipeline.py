@@ -176,7 +176,8 @@ def validate_candidates(raw, eps: list[Episode], source="llm"):
                     "duration": round(dur, 2),
                     "cross_episode": len({s["episode"] for s in segs}) > 1 or len(segs) > 1,
                     "hook": {"quote": c.get("hook_quote", ""), "type": c.get("hook_type", ""),
-                             "at": round(first["start"] + hook_off, 2), "offset_in_clip": round(hook_off, 2)},
+                             "at": round(first["start"] + hook_off, 2), "offset_in_clip": round(hook_off, 2),
+                             "kind": hk[0].kind},
                     "cliffhanger": {"quote": c.get("cliffhanger_quote", ""), "type": c.get("cliffhanger_type", ""),
                                     "at": round(ck[0].end, 2)},
                     "why": c.get("why", ""), "issues": issues,
@@ -279,6 +280,8 @@ def score(c):
         pen += 3
     if b.get("keep_watching") is False:
         pen += 3
+    if (c.get("hook") or {}).get("kind") in ("ACTION", "SOUND"):
+        pen += 1.5      # a stage direction is a weaker hook than a spoken line
     c["score_parts"] = parts
     c["penalty"] = pen
     c["score"] = round(max(0.0, total - pen), 1)
@@ -360,6 +363,44 @@ def rank(cands, per_episode=2, top=None):
     for i, c in enumerate(chosen, 1):
         c["rank"] = i
     return chosen
+
+
+def trim_replays(ranked, by):
+    """Episodes often open by replaying the last moment of the previous one. When a clip joins two segments, drop the
+    replayed lines from the start of the later segment so the viewer does not hear the same beat twice.
+    Runs on the final ranked clips only (after judging), so it never changes what the models were shown."""
+    for c in ranked:
+        segs = c["segments"]
+        for i in range(1, len(segs)):
+            prev, cur = segs[i - 1], segs[i]
+            pe, ce = by.get(prev["episode"]), by.get(cur["episode"])
+            if not pe or not ce:
+                continue
+            tail = [norm(e.text) for e in pe.events
+                    if e.kind == "DIALOGUE" and prev["start"] <= e.start < prev["end"]][-6:]
+            if not tail:
+                continue
+            new_start, dropped = None, 0
+            for e in ce.events:
+                if e.kind != "DIALOGUE" or e.start < cur["start"] - 0.01:
+                    continue
+                if e.start >= cur["end"] - 0.01:
+                    break
+                t = norm(e.text)
+                if any(difflib.SequenceMatcher(None, t, x).ratio() >= 0.85 for x in tail):
+                    new_start, dropped = e.end, dropped + 1
+                else:
+                    break
+            if not dropped:
+                continue
+            new_dur = c["duration"] - (new_start - cur["start"])
+            if new_dur < MIN_DUR or cur["end"] - new_start < 3:
+                c["issues"].append(f"replayed {dropped} line(s) at the join; not trimmed (clip would drop under {MIN_DUR:.0f}s)")
+                continue
+            cur["start"] = round(new_start, 2)
+            c["duration"] = round(sum(x["end"] - x["start"] for x in segs), 2)
+            c["issues"].append(f"trimmed {dropped} replayed line(s) at the join")
+    return ranked
 
 
 def post_reasons(llm, ranked, eps, run_id="r1", n=10):
@@ -452,6 +493,7 @@ def run(folder, llm, out_dir="outputs/run1", run_id="r1", top=25, only=None, pro
     ranked = rank(cands, top=top)
     progress("5/5 post-order notes")
     post_reasons(llm, ranked, eps, run_id)
+    trim_replays(ranked, {e.number: e for e in eps})
     write_outputs(out_dir, eps, raw, cands, rejected, ranked)
     progress(f"done: {len(ranked)} ranked promos in {out_dir}")
     return ranked
